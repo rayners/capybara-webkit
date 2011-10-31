@@ -85,14 +85,7 @@ class Capybara::Driver::Webkit
     end
 
     def command(name, *args)
-      @socket.puts name
-      @socket.puts args.size
-      args.each do |arg|
-        @socket.puts arg.to_s.bytesize
-        @socket.print arg.to_s
-      end
-      check
-      read_response
+      retry_command(0, name, *args)
     end
 
     def evaluate_script(script)
@@ -245,6 +238,23 @@ class Capybara::Driver::Webkit
         :user => "",
         :pass => ""
       }
+    end
+
+    def retry_command(count, name, *args)
+      @socket.puts name
+      @socket.puts args.size
+      args.each do |arg|
+        @socket.puts arg.to_s.bytesize
+        @socket.print arg.to_s
+      end
+      check
+      read_response
+    rescue Capybara::Driver::Webkit::WebkitInvalidResponseError => ex
+      if count > 2
+        raise ex
+      else
+        retry_command(count+1, name, *args)
+      end
     end
   end
 end
