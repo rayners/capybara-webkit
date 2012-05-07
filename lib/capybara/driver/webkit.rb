@@ -1,6 +1,7 @@
 require "capybara"
 require "capybara/driver/webkit/version"
 require "capybara/driver/webkit/node"
+require "capybara/driver/webkit/connection"
 require "capybara/driver/webkit/browser"
 require "capybara/driver/webkit/socket_debugger"
 require "capybara/driver/webkit/cookie_jar"
@@ -22,8 +23,8 @@ class Capybara::Driver::Webkit
     @options = options
     @rack_server = Capybara::Server.new(@app)
     @rack_server.boot if Capybara.run_server
-    @browser = options[:browser] || Browser.new(
-      :ignore_ssl_errors => options[:ignore_ssl_errors])
+    @browser = options[:browser] || Browser.new(Connection.new(options))
+    @browser.ignore_ssl_errors if options[:ignore_ssl_errors]
   end
 
   def current_url

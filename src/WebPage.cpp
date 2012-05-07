@@ -12,6 +12,7 @@ WebPage::WebPage(QObject *parent) : QWebPage(parent) {
   setUserStylesheet();
 
   m_loading = false;
+  m_ignoreSslErrors = false;
   this->setCustomNetworkAccessManager();
 
   connect(this, SIGNAL(loadStarted()), this, SLOT(loadStarted()));
@@ -25,6 +26,7 @@ WebPage::WebPage(QObject *parent) : QWebPage(parent) {
 
 void WebPage::resetWindowSize() {
   this->setViewportSize(QSize(1680, 1050));
+  this->settings()->setAttribute(QWebSettings::LocalStorageDatabaseEnabled, true);
 }
 
 void WebPage::setCustomNetworkAccessManager() {
@@ -32,7 +34,8 @@ void WebPage::setCustomNetworkAccessManager() {
   manager->setCookieJar(new NetworkCookieJar());
   this->setNetworkAccessManager(manager);
   connect(manager, SIGNAL(finished(QNetworkReply *)), this, SLOT(replyFinished(QNetworkReply *)));
-  connect(manager, SIGNAL(sslErrors(QNetworkReply *, QList<QSslError>)), this, SLOT(ignoreSslErrors(QNetworkReply *, QList<QSslError>)));
+  connect(manager, SIGNAL(sslErrors(QNetworkReply *, QList<QSslError>)),
+          this, SLOT(handleSslErrorsForReply(QNetworkReply *, QList<QSslError>)));
 }
 
 void WebPage::loadJavascript() {
@@ -204,19 +207,14 @@ void WebPage::replyFinished(QNetworkReply *reply) {
   }
 }
 
-void WebPage::ignoreSslErrors(QNetworkReply *reply, const QList<QSslError> &errors) {
+void WebPage::handleSslErrorsForReply(QNetworkReply *reply, const QList<QSslError> &errors) {
   if (m_ignoreSslErrors)
     reply->ignoreSslErrors(errors);
 }
 
-void WebPage::setIgnoreSslErrors(bool ignore) {
-  m_ignoreSslErrors = ignore;
+void WebPage::ignoreSslErrors() {
+  m_ignoreSslErrors = true;
 }
-
-bool WebPage::ignoreSslErrors() {
-  return m_ignoreSslErrors;
-}
-
 
 int WebPage::getLastStatus() {
   return m_lastStatus;
